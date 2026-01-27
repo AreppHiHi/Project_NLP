@@ -5,105 +5,121 @@ import seaborn as sns
 from wordcloud import WordCloud
 from textblob import TextBlob
 
-# --- 1. KONFIGURASI HALAMAN ---
+# --- 1. PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Sentiment Analysis Dashboard | Amazon Reviews",
+    page_title="Amazon Sentiment Analysis Dashboard",
     page_icon="🛒",
     layout="wide"
 )
 
-# --- 2. FUNGSI LOAD DATA ---
+# --- 2. DATA LOADING FUNCTION ---
 @st.cache_data
 def load_data():
-    # Pastikan fail ini ada di dalam GitHub repository anda
-    df = pd.read_csv("amazon_cleaned_with_sentiment.csv")
-    return df
+    # Make sure this file exists in your folder/GitHub
+    try:
+        df = pd.read_csv("amazon_cleaned_with_sentiment.csv")
+        return df
+    except FileNotFoundError:
+        return pd.DataFrame()
 
-# Memuatkan data
-try:
-    df = load_data()
-except FileNotFoundError:
-    st.error("Ralat: Fail 'amazon_cleaned_with_sentiment.csv' tidak dijumpai. Sila muat naik fail ke GitHub.")
-    st.stop()
+df = load_data()
 
-# --- 3. SIDEBAR (NAVIGASI & UJIAN LIVE) ---
-st.sidebar.image("https://www.vectorlogo.zone/logos/amazon/amazon-icon.svg", width=100)
-st.sidebar.title("NLP Project Dashboard")
+# --- 3. SIDEBAR CONFIGURATION ---
+st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg", width=120)
+st.sidebar.title(" Dashboard Controls")
 st.sidebar.markdown("---")
 
-st.sidebar.subheader("🧪 Uji Sentimen Baru")
-user_input = st.sidebar.text_area("Masukkan ulasan pelanggan di sini:")
+st.sidebar.header("Live Sentiment Test")
+st.sidebar.write("Test the model with your own text:")
+user_input = st.sidebar.text_area("Enter review text here:", height=100)
 
-if st.sidebar.button("Analisis Teks"):
+if st.sidebar.button("Analyze Text"):
     if user_input:
-        analysis = TextBlob(user_input)
-        polarity = analysis.sentiment.polarity
+        blob = TextBlob(user_input)
+        polarity = blob.sentiment.polarity
+        
+        st.sidebar.markdown("### Result:")
         if polarity > 0:
-            st.sidebar.success(f"Sentimen: Positif (Skor: {polarity:.2f})")
+            st.sidebar.success(f"😊 Positive (Score: {polarity:.2f})")
         elif polarity == 0:
-            st.sidebar.info(f"Sentimen: Neutral (Skor: {polarity:.2f})")
+            st.sidebar.info(f"😐 Neutral (Score: {polarity:.2f})")
         else:
-            st.sidebar.error(f"Sentimen: Negatif (Skor: {polarity:.2f})")
+            st.sidebar.error(f"😡 Negative (Score: {polarity:.2f})")
     else:
-        st.sidebar.warning("Sila masukkan teks untuk dianalisis.")
+        st.sidebar.warning("Please enter some text first.")
 
 st.sidebar.markdown("---")
-st.sidebar.write("Dibuat oleh: [Nama Anda]")
+st.sidebar.info("Project: JIE43303 NLP\nCreated by: [Your Name]")
 
-# --- 4. BAHAGIAN UTAMA DASHBOARD ---
-st.title("📊 Papan Pemuka Analisis Sentimen Amazon")
-st.write("Projek ini menggunakan **Natural Language Processing (NLP)** untuk menganalisis emosi pelanggan terhadap produk Amazon.")
+# --- 4. MAIN DASHBOARD UI ---
 
-# Metrik Ringkasan
-st.markdown("### Ringkasan Data")
-col1, col2, col3, col4 = st.columns(4)
+if not df.empty:
+    st.title("📊 Amazon Product Sentiment Analysis")
+    st.markdown("This dashboard analyzes customer reviews using **Natural Language Processing (NLP)** to determine overall sentiment trends.")
+    st.markdown("---")
 
-total_reviews = len(df)
-pos_count = len(df[df['sentiment_result'] == 'Positif'])
-neg_count = len(df[df['sentiment_result'] == 'Negatif'])
-neu_count = len(df[df['sentiment_result'] == 'Neutral'])
-
-col1.metric("Jumlah Ulasan", total_reviews)
-col2.metric("Sentimen Positif", pos_count, f"{(pos_count/total_reviews)*100:.1f}%")
-col3.metric("Sentimen Negatif", neg_count, f"-{(neg_count/total_reviews)*100:.1f}%", delta_color="inverse")
-col4.metric("Sentimen Neutral", neu_count, f"{(neu_count/total_reviews)*100:.1f}%")
-
-st.markdown("---")
-
-# --- 5. VISUALISASI DATA ---
-col_left, col_right = st.columns(2)
-
-with col_left:
-    st.subheader("📈 Taburan Sentimen")
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sentiment_data = df['sentiment_result'].value_counts()
-    sns.barplot(x=sentiment_data.index, y=sentiment_data.values, palette=['green', 'grey', 'red'], ax=ax)
-    ax.set_xlabel("Kategori Sentimen")
-    ax.set_ylabel("Bilangan Ulasan")
-    st.pyplot(fig)
-
-with col_right:
-    st.subheader("☁️ Awan Kata (Word Cloud)")
-    target_sentiment = st.selectbox("Pilih Sentimen:", ["Positif", "Negatif"])
+    # --- A. KEY METRICS ---
+    st.subheader(" Key Performance Indicators (KPIs)")
     
-    # Jana Word Cloud
-    text_subset = " ".join(df[df['sentiment_result'] == target_sentiment]['cleaned_review'].astype(str))
+    total_reviews = len(df)
+    pos_reviews = len(df[df['sentiment_result'] == 'Positive'])
+    neg_reviews = len(df[df['sentiment_result'] == 'Negative'])
+    neu_reviews = len(df[df['sentiment_result'] == 'Neutral'])
     
-    if text_subset:
-        wc = WordCloud(width=800, height=500, background_color='white', colormap='viridis').generate(text_subset)
-        fig_wc, ax_wc = plt.subplots(figsize=(10, 6))
-        ax_wc.imshow(wc, interpolation='bilinear')
-        ax_wc.axis('off')
-        st.pyplot(fig_wc)
-    else:
-        st.write("Tiada data untuk dipaparkan.")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Reviews", f"{total_reviews}")
+    col2.metric("Positive Reviews", f"{pos_reviews}", f"{(pos_reviews/total_reviews)*100:.1f}%")
+    col3.metric("Negative Reviews", f"{neg_reviews}", f"-{(neg_reviews/total_reviews)*100:.1f}%", delta_color="inverse")
+    col4.metric("Neutral Reviews", f"{neu_reviews}", f"{(neu_reviews/total_reviews)*100:.1f}%")
 
-st.markdown("---")
+    st.markdown("---")
 
-# --- 6. JADUAL DATA ---
-st.subheader("📂 Paparan Data Ulasan")
-st.write("Berikut adalah 50 baris pertama data yang telah diproses:")
-st.dataframe(df[['product_name', 'review_content', 'sentiment_result']].head(50), use_container_width=True)
+    # --- B. VISUALIZATIONS ---
+    col_left, col_right = st.columns(2)
 
-# --- 7. FOOTER ---
-st.caption("Projek JIE43303: Natural Language Processing - Sentiment Analysis Dashboard")
+    with col_left:
+        st.subheader("Sentiment Distribution")
+        
+        # Prepare data for chart
+        sentiment_counts = df['sentiment_result'].value_counts()
+        
+        # Create Bar Chart using Matplotlib/Seaborn
+        fig, ax = plt.subplots(figsize=(8, 5))
+        colors = {'Positive': '#2ecc71', 'Neutral': '#95a5a6', 'Negative': '#e74c3c'}
+        sns.barplot(x=sentiment_counts.index, y=sentiment_counts.values, palette=colors, ax=ax)
+        
+        ax.set_title("Number of Reviews by Sentiment Category")
+        ax.set_xlabel("Sentiment")
+        ax.set_ylabel("Count")
+        st.pyplot(fig)
+
+    with col_right:
+        st.subheader("☁️ Word Cloud Analysis")
+        sentiment_filter = st.selectbox("Select Sentiment to Visualize:", ["Positive", "Negative"])
+        
+        # Filter text based on selection
+        text_data = " ".join(df[df['sentiment_result'] == sentiment_filter]['cleaned_review'].astype(str))
+        
+        if text_data:
+            # Generate WordCloud
+            wc = WordCloud(width=800, height=400, background_color='white', colormap='viridis').generate(text_data)
+            
+            fig_wc, ax_wc = plt.subplots(figsize=(10, 5))
+            ax_wc.imshow(wc, interpolation='bilinear')
+            ax_wc.axis('off')
+            st.pyplot(fig_wc)
+        else:
+            st.warning("No reviews available for this category.")
+
+    st.markdown("---")
+
+    # --- C. DATA TABLE ---
+    st.subheader(" Processed Data Review")
+    st.write("Explore the cleaned data and sentiment labels:")
+    
+    # Display interactive dataframe
+    st.dataframe(df[['product_name', 'review_content', 'sentiment_result']].head(50), use_container_width=True)
+
+else:
+    # Error handling if file is missing
+    st.error(" Data file not found! Please ensure 'amazon_cleaned_with_sentiment.csv' is in the repository.")
