@@ -48,7 +48,7 @@ if st.sidebar.button("Analyze Text"):
         st.sidebar.warning("Please enter text to analyze.")
 
 st.sidebar.markdown("---")
-st.sidebar.write("Created by: [Your Name]")
+st.sidebar.write("Created by: [Muhammad Ariff Zakwan Bin Mohd Zaid]")
 
 # --- 4. MAIN DASHBOARD SECTION ---
 st.title("📊 Amazon Sentiment Analysis Dashboard")
