@@ -15,8 +15,9 @@ st.set_page_config(
 # --- 2. DATA LOADING FUNCTION ---
 @st.cache_data
 def load_data():
-    # Make sure this file exists in your folder/GitHub
+    # Pastikan fail ini wujud dalam folder atau GitHub repository anda
     try:
+        # Cuba baca fail
         df = pd.read_csv("amazon_cleaned_with_sentiment.csv")
         return df
     except FileNotFoundError:
@@ -26,10 +27,10 @@ df = load_data()
 
 # --- 3. SIDEBAR CONFIGURATION ---
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg", width=120)
-st.sidebar.title(" Dashboard Controls")
+st.sidebar.title("⚙️ Dashboard Controls")
 st.sidebar.markdown("---")
 
-st.sidebar.header("Live Sentiment Test")
+st.sidebar.header("🧪 Live Sentiment Test")
 st.sidebar.write("Test the model with your own text:")
 user_input = st.sidebar.text_area("Enter review text here:", height=100)
 
@@ -59,7 +60,7 @@ if not df.empty:
     st.markdown("---")
 
     # --- A. KEY METRICS ---
-    st.subheader(" Key Performance Indicators (KPIs)")
+    st.subheader("📌 Key Performance Indicators (KPIs)")
     
     total_reviews = len(df)
     pos_reviews = len(df[df['sentiment_result'] == 'Positive'])
@@ -78,7 +79,7 @@ if not df.empty:
     col_left, col_right = st.columns(2)
 
     with col_left:
-        st.subheader("Sentiment Distribution")
+        st.subheader("📈 Sentiment Distribution")
         
         # Prepare data for chart
         sentiment_counts = df['sentiment_result'].value_counts()
@@ -86,7 +87,17 @@ if not df.empty:
         # Create Bar Chart using Matplotlib/Seaborn
         fig, ax = plt.subplots(figsize=(8, 5))
         colors = {'Positive': '#2ecc71', 'Neutral': '#95a5a6', 'Negative': '#e74c3c'}
-        sns.barplot(x=sentiment_counts.index, y=sentiment_counts.values, palette=colors, ax=ax)
+        
+        # --- PEMBAIKAN UTAMA DI SINI ---
+        sns.barplot(
+            x=sentiment_counts.index, 
+            y=sentiment_counts.values, 
+            hue=sentiment_counts.index,  # <--- WAJIB UNTUK SEABORN BARU
+            palette=colors, 
+            legend=False,                # <--- MATIKAN LEGEND DUPLIKAT
+            ax=ax
+        )
+        # -------------------------------
         
         ax.set_title("Number of Reviews by Sentiment Category")
         ax.set_xlabel("Sentiment")
@@ -114,7 +125,7 @@ if not df.empty:
     st.markdown("---")
 
     # --- C. DATA TABLE ---
-    st.subheader(" Processed Data Review")
+    st.subheader("📝 Processed Data Review")
     st.write("Explore the cleaned data and sentiment labels:")
     
     # Display interactive dataframe
@@ -122,4 +133,4 @@ if not df.empty:
 
 else:
     # Error handling if file is missing
-    st.error(" Data file not found! Please ensure 'amazon_cleaned_with_sentiment.csv' is in the repository.")
+    st.error("⚠️ Data file not found! Please ensure 'amazon_cleaned_with_sentiment.csv' is in the repository.")
